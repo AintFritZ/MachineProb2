@@ -1,1 +1,1 @@
-# MachineProb2
+# Creating a Nim Game.
