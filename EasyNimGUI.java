@@ -1,17 +1,24 @@
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
 import java.util.Stack;
 
 public class EasyNimGUI {
+
     private JFrame frame;
     private JPanel panel;
     private JLabel[] pileLabels;
     private JLabel[] starLabels;
     private JButton[] removeButtons;
     private Stack<Integer>[] piles;
-    private int lastMovePlayer = 2;
+    private int lastMovePlayer = 1; // Initialize to player 1
+    private JLabel player1Indicator; // Square for player 1
+    private JLabel player2Indicator; // Square for player 2
 
     private ImageIcon starIcon;
 
@@ -38,12 +45,20 @@ public class EasyNimGUI {
 
         panel = new JPanel();
         panel.setOpaque(false);
-        panel.setLayout(new BorderLayout());
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
 
-        JPanel pileButtonPanel = new JPanel(new GridLayout(5, 1));
+        JPanel pileButtonPanel = new JPanel();
         pileButtonPanel.setOpaque(false);
-        pileButtonPanel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 0));
-        pileButtonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pileButtonPanel.setLayout(new GridBagLayout());
+        GridBagConstraints pileButtonPanelConstraints = new GridBagConstraints();
+        pileButtonPanelConstraints.gridx = 0;
+        pileButtonPanelConstraints.gridy = 0;
+        pileButtonPanelConstraints.anchor = GridBagConstraints.CENTER;
 
         pileLabels = new JLabel[3];
         starLabels = new JLabel[3];
@@ -52,24 +67,68 @@ public class EasyNimGUI {
             int pileIndex = i + 1;
             pileLabels[i] = new JLabel("Pile " + pileIndex + ": ");
             pileLabels[i].setForeground(Color.WHITE);
+            pileLabels[i].setFont(pileLabels[i].getFont().deriveFont(Font.BOLD, 20)); // Increase font size
+
             starLabels[i] = new JLabel();
-            removeButtons[i] = new JButton("Remove");
+            starLabels[i].setFont(starLabels[i].getFont().deriveFont(Font.PLAIN, 20)); // Increase font size
+
+            removeButtons[i] = new JButton();
+            try {
+                BufferedImage img = ImageIO.read(new File("C:/Users/evban/OneDrive/Pictures/Nim/REMOVE.png"));
+                Image scaledImage = img.getScaledInstance(80, 40, Image.SCALE_SMOOTH);
+                removeButtons[i].setIcon(new ImageIcon(scaledImage));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            removeButtons[i].setBorderPainted(false);
+            removeButtons[i].setContentAreaFilled(false);
             removeButtons[i].addActionListener(new RemoveButtonListener(pileIndex));
-            JPanel pileButtonRowPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            pileButtonRowPanel.setOpaque(false);
-            pileButtonRowPanel.add(starLabels[i]);
-            pileButtonRowPanel.add(removeButtons[i]);
-            pileButtonPanel.add(pileButtonRowPanel);
+
+            // Add pile label
+            GridBagConstraints pileLabelConstraints = new GridBagConstraints();
+            pileLabelConstraints.gridx = 0;
+            pileLabelConstraints.gridy = i * 2; // Adjusted to add space between rows
+            pileLabelConstraints.anchor = GridBagConstraints.LINE_START;
+            pileLabelConstraints.insets = new Insets(10, 10, 0, 10); // Adjust insets for vertical space
+            pileButtonPanel.add(pileLabels[i], pileLabelConstraints);
+
+            // Add star label
+            GridBagConstraints starLabelConstraints = new GridBagConstraints();
+            starLabelConstraints.gridx = 1;
+            starLabelConstraints.gridy = i * 2; // Adjusted to add space between rows
+            starLabelConstraints.anchor = GridBagConstraints.CENTER;
+            starLabelConstraints.insets = new Insets(10, 10, 0, 10); // Adjust insets for vertical space
+            pileButtonPanel.add(starLabels[i], starLabelConstraints);
+
+            // Add remove button
+            GridBagConstraints removeButtonConstraints = new GridBagConstraints();
+            removeButtonConstraints.gridx = 2;
+            removeButtonConstraints.gridy = i * 2; // Adjusted to add space between rows
+            removeButtonConstraints.anchor = GridBagConstraints.LINE_START;
+            removeButtonConstraints.insets = new Insets(10, 10, 0, 10); // Adjust insets for vertical space
+            pileButtonPanel.add(removeButtons[i], removeButtonConstraints);
+
+            // Add vertical space between rows
+            GridBagConstraints spaceConstraints = new GridBagConstraints();
+            spaceConstraints.gridx = 0;
+            spaceConstraints.gridy = i * 2 + 1; // Adjusted to add space between rows
+            spaceConstraints.weighty = 0.5; // Give weight to vertical space
+            pileButtonPanel.add(Box.createGlue(), spaceConstraints);
         }
 
-        JPanel pileLabelPanel = new JPanel(new GridLayout(1, 3));
-        pileLabelPanel.setOpaque(false);
-        for (int i = 0; i < 3; i++) {
-            pileLabelPanel.add(pileLabels[i]);
-        }
-        pileButtonPanel.add(pileLabelPanel);
+        // Adding squares for player indicators
+        player1Indicator = createIndicatorSquare("C:/Users/evban/OneDrive/Pictures/Nim/Player1.png");
+        player2Indicator = createIndicatorSquare("C:/Users/evban/OneDrive/Pictures/Nim/Player2.png");
 
-        panel.add(pileButtonPanel, BorderLayout.CENTER);
+        JPanel indicatorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        indicatorPanel.setOpaque(false);
+        indicatorPanel.add(player1Indicator);
+        indicatorPanel.add(player2Indicator);
+
+        gbc.gridy++;
+        panel.add(pileButtonPanel, gbc);
+        gbc.gridy++;
+        panel.add(indicatorPanel, gbc);
 
         backgroundLabel.setLayout(new GridBagLayout());
         backgroundLabel.add(panel);
@@ -78,6 +137,21 @@ public class EasyNimGUI {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    private JLabel createIndicatorSquare(String imagePath) {
+        JLabel indicator = new JLabel();
+        ImageIcon icon = new ImageIcon(imagePath);
+        int newWidth = (int) (icon.getIconWidth() * 0.8); // Increase width by 50%
+        int newHeight = (int) (icon.getIconHeight() * 0.8); // Increase height by 50%
+        Image scaledImage = icon.getImage().getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+        ImageIcon scaledIcon = new ImageIcon(scaledImage);
+        indicator.setPreferredSize(new Dimension(250, 250)); // Set size to 100x100
+        indicator.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2)); // Initial white outline
+        indicator.setIcon(scaledIcon);
+        indicator.setHorizontalAlignment(SwingConstants.CENTER); // Center the image horizontally
+        indicator.setVerticalAlignment(SwingConstants.CENTER); // Center the image vertically
+        return indicator;
     }
 
     private void initializeGame() {
@@ -130,14 +204,27 @@ public class EasyNimGUI {
     private int findWinningPlayer() {
         return lastMovePlayer;
     }
+
     private void updateGUI() {
+        // Update player indicators
+        if (lastMovePlayer == 1) {
+            player1Indicator.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2)); // White outline for player 1
+            player2Indicator.setBorder(null); // No outline for player 2
+        } else {
+            player1Indicator.setBorder(null); // No outline for player 1
+            player2Indicator.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2)); // White outline for player 2
+        }
+
         for (int i = 0; i < 3; i++) {
             int numObjects = piles[i + 1].size();
             starLabels[i].setIcon(null);
             if (numObjects > 0) {
                 StringBuilder stars = new StringBuilder();
                 for (int j = 0; j < numObjects; j++) {
-                    stars.append("<img src='file:///C:/Users/evban/OneDrive/Pictures/Nim/StarNIM.png' width='20' height='20'/>");
+                    stars.append("<img src='file:///C:/Users/evban/OneDrive/Pictures/Nim/StarNIM.png' width='22' height='22'/>");
+                    if (j < numObjects - 1) {
+                        stars.append("&nbsp;");
+                    }
                 }
                 starLabels[i].setText("<html>" + stars.toString() + "</html>");
             } else {
@@ -154,7 +241,6 @@ public class EasyNimGUI {
             frame.dispose();
         }
     }
-
 
     private boolean isGameOver() {
         for (int i = 0; i < 3; i++) {
